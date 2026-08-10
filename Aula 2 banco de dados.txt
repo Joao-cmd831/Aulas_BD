@@ -1,0 +1,51 @@
+-- Aula 2 banco de dados 
+create database if not exists livraria;
+drop database livraria;
+use livraria;
+
+create table if not exists livraria . aluno(
+id integer not null auto_increment,
+nome varchar(255) not null,
+email varchar(255) not null,
+telefone varchar(14), 
+altura decimal(3,2),
+primary key (id)
+)engine = InnoDB;
+
+create table if not exists livraria . professor(
+id integer not null auto_increment,
+nome varchar(255) not null,
+email varchar(255) not null,
+telefone varchar(14), 
+altura decimal(3,2),
+primary key (id)
+)engine = InnoDB;
+
+insert into professor (id, nome, email, telefone, altura)
+values
+(null, 'Ivanete', 'Ivanete@gmail.com', '(61)98787-9987', 1.74),
+(null, 'Floriano', 'Flori@gmail.com', '(61)98787-3333', 1.79);
+
+select * from professor;
+
+drop table professor; 
+
+insert into aluno (id, nome, email, telefone, altura)
+values(null, 'Paulao', 'paulaonego@gmail.com', '(61)98787-9987', 1.74),
+(null, 'Igao', 'Igor@gmail.com', '(61)98787-3333', 2.21),
+(null, 'julia', 'julia@gmail.com', '(61)98787-2222', 3.70),
+(null, 'Jose', 'Jose@gmail.com', '(61)98787-1111', 1.77),
+(null, 'Maria', 'Maria@gmail.com', '(61)98787-4444', 4.77);
+
+select nome, email from aluno;
+select * from aluno;
+
+drop table aluno;
+
+show tables;
+
+-- delete from Aluno where id between 1 and 5; 
+
+-- truncate table Aluno / Professor; > deletar toda a tabela
+
+
