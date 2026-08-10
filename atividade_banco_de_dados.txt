@@ -1,0 +1,45 @@
+
+CREATE DATABASE biblioteca;
+
+USE biblioteca;
+
+CREATE TABLE livros (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100),
+    preco DECIMAL(10,2)
+);
+
+-- Inserindo o livro Java
+INSERT INTO livros (nome, preco)
+VALUES ('Java', 100.00);
+
+-- 1) Acrescentando mais 3 livros
+INSERT INTO livros (nome, preco)
+VALUES
+('Cobol', 100.99),
+('Delphi', 50.67),
+('Angular', 110.78);
+
+-- 2) Mostrando os livros cadastrados
+SELECT * FROM livros;
+
+-- 3) Alterando os preços
+
+UPDATE livros
+SET preco = 112.99
+WHERE nome = 'Java';
+
+UPDATE livros
+SET preco = 99.98
+WHERE nome = 'Cobol';
+
+UPDATE livros
+SET preco = 40.98
+WHERE nome = 'Delphi';
+
+UPDATE livros
+SET preco = 100.77
+WHERE nome = 'Angular';
+
+-- 4) Mostrando novamente os livros
+SELECT * FROM livros;
