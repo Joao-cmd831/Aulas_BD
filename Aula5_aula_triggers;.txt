@@ -94,26 +94,30 @@ update Aluno set nome ="José da Silva Pimentel" where cod = 2;
  
 -- Exercício 2
 
-create table bd_aula_triggers . Curso_Auditoria (
-id int not null auto_increment,
-cod int not null,
-descricao varchar(200) not null,
-modificado_em datetime default null,
-acao varchar(50) default null,
-primary key(id)
-)engine = InnoDB;
+CREATE TABLE `bd_aula_triggers`.`Cursos_Auditoria`(
+	`id` INT NOT NULL AUTO_INCREMENT,
+    `cod` INT NOT NULL,
+    `descricao` VARCHAR(200) NOT NULL,
+    `modificado_em` DATETIME DEFAULT NULL,
+    `acao` VARCHAR(50) DEFAULT NULL,
+    PRIMARY KEY(id)
+)ENGINE = InnoDB;
 
-delimiter $$
+DELIMITER $$
+CREATE TRIGGER antesDeUpdate_Cursos
+BEFORE  UPDATE ON Curso
+	FOR EACH ROW
+		BEGIN
+			INSERT INTO Cursos_Auditoria
+            SET acao = 'update',
+            cod = OLD.cod,
+            descricao = OLD.descricao,
+            modificado_em = NOW(); 
+            END$$
+DELIMITER ;
 
-create trigger auditoria_dos_cursos
-before update on curso
- for each row 
-  begin insert into Curso_Auditoria
-  set acao = 'update',
-  cod = old.cod,
-  nome = old.descricao,
-  modificado_em = now(); end$$
-  
-delimiter ; 
+SHOW TRIGGERS;
 
-show triggers;
+UPDATE Curso SET descricao = "BACHARELADO EM CIÊNCIAS DA COMPUTAÇÃO" WHERE cod = 1;
+SELECT * FROM `Curso`;
+SELECT * FROM `Cursos_Auditoria`;
