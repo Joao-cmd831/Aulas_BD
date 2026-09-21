@@ -1,0 +1,50 @@
+create database bd_aula_functions;
+use bd_aula_functions;
+drop database bd_aula_functions;
+-- tabela aluno
+create table aluno (
+id int not null,
+nome varchar(100) not null,
+matricula varchar(45) not null,
+data_nascimento date null,
+data_matricula date not null,
+primary key (id) ,
+unique index matricula_UNIQUE (matricula ASC)
+)engine  = InnoDB;
+
+-- tabela prova
+create table prova (
+id int not null,
+data_realizao date not null,
+descricao varchar(255) not null,
+primary key (id)
+)engine = InnoDB;
+
+-- tabela nota
+create table nota (
+aluno_id int not null,
+prova_id int not null,
+valor_nota decimal(15,2) null,
+primary key ( aluno_id, prova_id),
+index fk_aluno_has_prova_prova_1(prova_id asc),
+index fk_aluno_has_prova_aluno1(aluno_id asc),
+constraint fk_aluno_has_prova_aluno1
+foreign key (aluno_id)
+references aluno (id)
+on delete no action
+on update no action ,
+constraint fk_aluno_has_prova_prova1
+foreign key (prova_id)
+references prova (id)
+on delete no action
+on update no action
+)engine = InnoDB;
+
+-- inserindo alunos
+insert into aluno (id, nome, matricula, data_nascimento, data_matricula) values
+(1, 'Michael John', '123A','1993-08-23', current_date()),
+(2, 'Willians Junior', '400B','1993-04-10', current_date()),
+(3, 'John Billboard', '420B','1993-07-30', current_date()),
+(4, 'Jenny Killy', '010A', null, '2014-01-25');
+
+-- completar depois
