@@ -1,0 +1,295 @@
+-- Banco da loja virtual
+
+drop database bdlv;
+create schema bdlv;
+use bdlv;
+
+create table cliente (
+    id_cliente int auto_increment primary key,
+    nome varchar(100) not null,
+    email varchar(150) not null unique,
+    senha_hash varchar(255) not null,
+    telefone varchar(20),
+    endereco varchar(255),
+    data_cadastro datetime not null default current_timestamp
+) ENGINE=InnoDB;
+
+create table produto (
+    id_produto INT auto_increment primary key,
+    nome varchar(120) not null,
+    descricao text,
+    preco decimal(10,2) not null,
+    estoque int not null default 0,
+    ativo boolean not null default true,
+    constraint chk_produto_preco check (preco >= 0),
+    constraint chk_produto_estoque check (estoque >= 0)
+) ENGINE=InnoDB;
+
+create table pedido (
+    id_pedido int auto_increment primary key,
+    id_cliente int not null,
+    data_pedido datetime not null default current_TIMESTAMP,
+    status varchar(30) not null default 'PENDENTE',
+    valor_total DECIMAL(10,2) not null default 0.00,
+    constraint chk_pedido_valor CHECK (valor_total >= 0),
+    constraint fk_pedido_cliente foreign key (id_cliente)
+        references cliente(id_cliente) on update cascade on delete restrict
+) ENGINE=InnoDB;
+
+create table item_pedido (
+    id_pedido int not null,
+    id_produto int not null,
+    quantidade int not null,
+    preco_unitario decimal(10,2) not null,
+    primary key (id_pedido, id_produto),
+    constraint chk_item_quantidade check (quantidade > 0),
+    constraint chk_item_preco check (preco_unitario >= 0),
+    constraint fk_item_pedido foreign key (id_pedido)
+        references pedido(id_pedido) on update cascade on delete cascade,
+    constraint fk_item_produto foreign key (id_produto)
+        references produto(id_produto) on update cascade on delete restrict
+) ENGINE=InnoDB;
+
+create table pagamento (
+    id_pagamento int auto_increment primary key,
+    id_pedido int not null,
+    data_pagamento datetime,
+    valor decimal(10,2) not null,
+    metodo varchar(40) not null,
+    status varchar(30) not null default 'PENDENTE',
+    codigo_transacao varchar(100),
+    constraint chk_pagamento_valor check (valor >= 0),
+    constraint fk_pagamento_pedido FOREIGN KEY (id_pedido)
+        references pedido(id_pedido) on update cascade on delete restrict
+) ENGINE=InnoDB;
+
+
+-- inserindo clientes
+
+insert into cliente
+    (nome, email, senha_hash, telefone, endereco)
+values
+    ('João Pedro Silva', 'joao@email.com', 'hash_exemplo_01',
+     '(61) 99999-1111', 'Brasília - DF'),
+
+    ('Maria Oliveira', 'maria@email.com', 'hash_exemplo_02',
+     '(61) 99999-2222', 'Taguatinga - DF'),
+
+    ('Carlos Santos', 'carlos@email.com', 'hash_exemplo_03',
+     '(61) 99999-3333', 'Ceilândia - DF');
+
+
+-- inserindo produtos
+
+insert into produto
+    (nome, descricao, preco, estoque, ativo)
+values
+    ('Notebook', 'Notebook para estudos e trabalho',
+     3500.00, 10, true),
+
+    ('Mouse', 'Mouse USB óptico',
+     50.00, 30, true),
+
+    ('Teclado', 'Teclado USB ABNT2',
+     120.00, 20, true),
+
+    ('Monitor', 'Monitor LED de 24 polegadas',
+     850.00, 15, true);
+
+
+-- inserindo pedidos
+
+insert into pedido
+    (id_cliente, status, valor_total)
+values
+    (1, 'PENDENTE', 3600.00),
+
+    (2, 'PAGO', 290.00),
+
+    (3, 'ENVIADO', 850.00);
+
+
+-- inserindo itens dos pedidos
+
+insert into item_pedido
+    (id_pedido, id_produto, quantidade, preco_unitario)
+values
+    (1, 1, 1, 3500.00),
+    (1, 2, 2, 50.00),
+
+    (2, 2, 1, 50.00),
+    (2, 3, 2, 120.00),
+
+    (3, 4, 1, 850.00);
+
+
+-- inserindo pagamentos
+
+insert into pagamento
+    (id_pedido, data_pagamento, valor, metodo, status, codigo_transacao)
+values
+    (1, NULL, 3600.00, 'PIX', 'PENDENTE', NULL),
+
+    (2, current_TIMESTAMP, 290.00, 'CARTAO',
+     'Aprovado', 'TRANSACAO002'),
+
+    (3, current_TIMESTAMP, 850.00, 'PIX',
+     'Aprovado', 'TRANSACAO003');
+
+
+-- consultas
+
+select * from cliente;
+select * from produto;
+select * from pedido;
+select * from item_pedido;
+select * from pagamento;
+
+
+-- 1. Function
+-- Calcula o valor total de um pedido
+
+DELIMITER $$
+
+create function fn_total_pedido(p_id_pedido INT)
+returns decimal(10,2)
+reads sql data
+begin
+    declare v_total decimal(10,2);
+
+    select coalesce(SUM(quantidade * preco_unitario), 0)
+    into v_total
+    from item_pedido
+    where id_pedido = p_id_pedido;
+
+    return v_total;
+end $$
+
+DELIMITER ;
+
+select fn_total_pedido(1) as total_pedido;
+
+
+-- 2. Procedure
+-- Recalcula o valor total do pedido
+
+DELIMITER $$
+
+create procedure sp_recalcular_total_pedido(
+    in p_id_pedido int
+)
+begin
+    update pedido
+    set valor_total = fn_total_pedido(p_id_pedido)
+    where id_pedido = p_id_pedido;
+end $$
+
+DELIMITER ;
+
+call sp_recalcular_total_pedido(1);
+
+select * from pedido;
+
+
+-- 3. Procedure
+-- Consulta os pedidos de um cliente
+
+DELIMITER $$
+
+create procedure sp_listar_pedidos_cliente(
+    in p_id_cliente int
+)
+begin
+    select
+        p.id_pedido,
+        c.nome as cliente,
+        p.data_pedido,
+        p.status,
+        p.valor_total
+    from pedido p
+    inner join cliente c
+        on p.id_cliente = c.id_cliente
+    where p.id_cliente = p_id_cliente
+    order by p.data_pedido desc;
+
+end $$
+
+DELIMITER ;
+
+call sp_listar_pedidos_cliente(1);
+
+
+-- 4. Trigger
+-- Verifica se existe estoque suficiente
+-- antes de inserir um item no pedido
+
+DELIMITER $$
+
+create trigger trg_verificar_estoque
+before insert on item_pedido
+for each row
+begin
+    declare v_estoque int;
+
+    select estoque
+    into v_estoque
+    from produto
+    where id_produto = new.id_produto
+    for update;
+
+    if v_estoque < new.quantidade then
+        signal sqlstate '45000'
+        set message_text = 'Estoque insuficiente para este produto';
+    end if;
+end $$
+
+DELIMITER ;
+
+
+-- 5. Trigger
+-- Desconta o estoque após inserir um item
+
+DELIMITER $$
+
+create trigger trg_descontar_estoque
+after insert on item_pedido
+for each row
+begin
+    update produto
+    set estoque = estoque - new.quantidade
+    where id_produto = new.id_produto;
+end $$
+
+DELIMITER ;
+
+insert into item_pedido
+    (id_pedido, id_produto, quantidade, preco_unitario)
+values
+    (1, 3, 2, 120.00);
+
+select * from produto
+where id_produto = 3;
+
+
+-- 6. Trigger
+-- Devolve o estoque quando um item é excluído
+
+DELIMITER $$
+
+create trigger trg_devolver_estoque
+after delete on item_pedido
+for each row
+begin
+    update produto
+    set estoque = estoque + old.quantidade
+    where id_produto = old.id_produto;
+end $$
+
+DELIMITER ;
+
+delete from item_pedido
+where id_pedido = 1
+and id_produto = 3;
+
+select * from produto
+where id_produto = 3;
